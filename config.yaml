@@ -6,5 +6,5 @@ redis:
 queue:
     name: updates
     read_delay: 0
-    wait_delay: 1
+    wait_delay: 3
     write_delay: 0.25
