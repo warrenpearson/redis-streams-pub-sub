@@ -9,14 +9,12 @@ from yaml_config import config
 
 class Subscriber:
     def run(self):
-        redis_host = config["redis"]["host"]
-        redis_port = config["redis"]["port"]
-        redis_db = config["redis"]["db"]
         msg_queue = config["queue"]["name"]
         wait_delay = config["queue"]["wait_delay"]
         read_delay = config["queue"]["read_delay"]
 
-        red = redis.Redis(host=redis_host, port=redis_port, db=redis_db)
+        red = self.setup_redis()
+
         read_from = "0-0"
 
         while True:
@@ -29,14 +27,21 @@ class Subscriber:
             if item:
                 next_key = self.handle_message(item)
                 if not next_key:
-                    logging.info(f"something went wrong with {item}")
+                    logging.info(f"Error handling {item}")
                     read_from = "0-0"
+                else:
+                    read_from = next_key
 
-                read_from = next_key
                 red.xdel(msg_queue, next_key)
                 time.sleep(read_delay)
             else:
                 time.sleep(wait_delay)
+
+    def setup_redis(self):
+        redis_host = config["redis"]["host"]
+        redis_port = config["redis"]["port"]
+        redis_db = config["redis"]["db"]
+        return redis.Redis(host=redis_host, port=redis_port, db=redis_db)
 
     def handle_message(self, item):
         item = item[0][1][0]
